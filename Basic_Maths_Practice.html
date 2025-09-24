@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Math Quiz Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 40px;
+      background-color: #f0f8ff;
+    }
+    h1 {
+      color: #333;
+    }
+    #game, #result {
+      display: none;
+    }
+    .input-field {
+      margin: 10px;
+    }
+    input[type="number"] {
+      padding: 5px;
+      width: 100px;
+    }
+    #question {
+      font-size: 24px;
+      margin: 20px;
+    }
+    #timer {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    #answer {
+      padding: 8px;
+      font-size: 18px;
+      width: 100px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .correct {
+      color: green;
+    }
+    .wrong {
+      color: red;
+    }
+    label {
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🧠 Math Quiz Game</h1>
+
+  <div id="setup">
+    <div class="input-field">
+      <label>⏳ Duration (minutes): </label>
+      <input type="number" id="duration" value="3" min="1" />
+    </div>
+    <div class="input-field">
+      <label>🔢 Min Number: </label>
+      <input type="number" id="minNum" value="1" />
+    </div>
+    <div class="input-field">
+      <label>🔢 Max Number: </label>
+      <input type="number" id="maxNum" value="10" />
+    </div>
+    <div class="input-field">
+      <label>⚙️ Choose Operations:</label><br>
+      <label><input type="checkbox" id="add" checked> ➕ Addition</label>
+      <label><input type="checkbox" id="sub"> ➖ Subtraction</label>
+      <label><input type="checkbox" id="mul"> ✖️ Multiplication</label>
+      <label><input type="checkbox" id="div"> ➗ Division</label>
+    </div>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <div id="game">
+    <div id="timer">⏱️ Time Left: <span id="timeLeft"></span> seconds</div>
+    <div id="question"></div>
+    <input type="number" id="answer" placeholder="Your answer" />
+    <button onclick="submitAnswer()">Submit</button>
+    <div id="feedback"></div>
+  </div>
+
+  <div id="result">
+    <h2>⏱️ Time's Up!</h2>
+    <p>Total Questions: <span id="total"></span></p>
+    <p class="correct">✅ Correct: <span id="correct"></span></p>
+    <p class="wrong">❌ Wrong: <span id="wrong"></span></p>
+    <button onclick="location.reload()">Play Again</button>
+  </div>
+
+  <script>
+    let duration, minNum, maxNum;
+    let timeLeft;
+    let correct = 0, wrong = 0, total = 0;
+    let timerInterval;
+    let currentAnswer = 0;
+    let selectedOperations = [];
+
+    function startGame() {
+      duration = parseInt(document.getElementById("duration").value) * 60;
+      minNum = parseInt(document.getElementById("minNum").value);
+      maxNum = parseInt(document.getElementById("maxNum").value);
+
+      selectedOperations = [];
+      if (document.getElementById("add").checked) selectedOperations.push("+");
+      if (document.getElementById("sub").checked) selectedOperations.push("-");
+      if (document.getElementById("mul").checked) selectedOperations.push("*");
+      if (document.getElementById("div").checked) selectedOperations.push("/");
+
+      if (isNaN(duration) || isNaN(minNum) || isNaN(maxNum) || minNum > maxNum || duration <= 0) {
+        alert("Please enter valid values.");
+        return;
+      }
+
+      if (selectedOperations.length === 0) {
+        alert("Please select at least one operation.");
+        return;
+      }
+
+      document.getElementById("setup").style.display = "none";
+      document.getElementById("game").style.display = "block";
+
+      timeLeft = duration;
+      document.getElementById("timeLeft").textContent = timeLeft;
+
+      generateQuestion();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+      timeLeft--;
+      document.getElementById("timeLeft").textContent = timeLeft;
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        endGame();
+      }
+    }
+
+    function rand(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateQuestion() {
+      let num1, num2, operation, questionStr;
+
+      operation = selectedOperations[Math.floor(Math.random() * selectedOperations.length)];
+
+      switch (operation) {
+        case "+":
+          num1 = rand(minNum, maxNum);
+          num2 = rand(minNum, maxNum);
+          currentAnswer = num1 + num2;
+          questionStr = `${num1} + ${num2}`;
+          break;
+
+        case "-":
+          num1 = rand(minNum, maxNum);
+          num2 = rand(minNum, maxNum);
+          if (num2 > num1) {
+            [num1, num2] = [num2, num1]; // ensure num1 ≥ num2
+          }
+          currentAnswer = num1 - num2;
+          questionStr = `${num1} - ${num2}`;
+          break;
+
+        case "*":
+          num1 = rand(minNum, maxNum);
+          num2 = rand(minNum, maxNum);
+          currentAnswer = num1 * num2;
+          questionStr = `${num1} × ${num2}`;
+          break;
+
+        case "/":
+          num2 = rand(minNum, maxNum);
+          currentAnswer = rand(minNum, maxNum);
+          num1 = num2 * currentAnswer; // ensures clean division
+          questionStr = `${num1} ÷ ${num2}`;
+          break;
+      }
+
+      document.getElementById("question").textContent = questionStr + " = ?";
+      document.getElementById("answer").value = "";
+      document.getElementById("answer").focus();
+      document.getElementById("feedback").textContent = "";
+    }
+
+    function submitAnswer() {
+      const userAnswer = parseInt(document.getElementById("answer").value);
+      if (isNaN(userAnswer)) {
+        alert("Please enter a number.");
+        return;
+      }
+
+      total++;
+      if (userAnswer === currentAnswer) {
+        correct++;
+        document.getElementById("feedback").textContent = "✅ Correct!";
+        document.getElementById("feedback").className = "correct";
+      } else {
+        wrong++;
+        document.getElementById("feedback").textContent = `❌ Wrong! Correct was ${currentAnswer}`;
+        document.getElementById("feedback").className = "wrong";
+      }
+
+      setTimeout(generateQuestion, 800);
+    }
+
+    function endGame() {
+      document.getElementById("game").style.display = "none";
+      document.getElementById("result").style.display = "block";
+      document.getElementById("total").textContent = total;
+      document.getElementById("correct").textContent = correct;
+      document.getElementById("wrong").textContent = wrong;
+    }
+
+    // Allow pressing Enter to submit answer
+    document.addEventListener("keypress", function(event) {
+      if (event.key === "Enter" && document.getElementById("game").style.display === "block") {
+        submitAnswer();
+      }
+    });
+  </script>
+</body>
+</html>
